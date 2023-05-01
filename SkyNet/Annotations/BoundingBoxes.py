@@ -21,60 +21,10 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
-import colorsys
 import cv2 as cv
 
 
-def create_unique_color_float(tag, hue_step=0.41):
-    """Create a unique RGB color code for a given track id (tag).
-
-    The color code is generated in HSV color space by moving along the
-    hue angle and gradually changing the saturation.
-
-    Parameters
-    ----------
-    tag : int
-        The unique target identifying tag.
-    hue_step : float
-        Difference between two neighboring color codes in HSV space (more
-        specifically, the distance in hue channel).
-
-    Returns
-    -------
-    (float, float, float)
-        RGB color code in range [0, 1]
-
-    """
-    h, v = (tag * hue_step) % 1, 1. - (int(tag * hue_step) % 4) / 5.
-    r, g, b = colorsys.hsv_to_rgb(h, 1., v)
-    return r, g, b
-
-
-def create_unique_color_uchar(tag, hue_step=0.41):
-    """Create a unique RGB color code for a given track id (tag).
-
-    The color code is generated in HSV color space by moving along the
-    hue angle and gradually changing the saturation.
-
-    Parameters
-    ----------
-    tag : int
-        The unique target identifying tag.
-    hue_step : float
-        Difference between two neighboring color codes in HSV space (more
-        specifically, the distance in hue channel).
-
-    Returns
-    -------
-    (int, int, int)
-        RGB color code in range [0, 255]
-
-    """
-    r, g, b = create_unique_color_float(tag, hue_step)
-    return int(255 * r), int(255 * g), int(255 * b)
-
-
-def draw_rectangle(x, y, w, h, image, label=None, thickness=2, color=(0, 0, 255)):
+def draw_rectangle(l, t, r, b, image, label=None, thickness=2, color=(0, 0, 255)):
     """Draw a rectangle.
 
     Parameters
@@ -92,8 +42,8 @@ def draw_rectangle(x, y, w, h, image, label=None, thickness=2, color=(0, 0, 255)
         rectangle.
 
     """
-    pt1 = int(x), int(y)
-    pt2 = int(x + w), int(y + h)
+    pt1 = int(l), int(t)
+    pt2 = int(r), int(b)
     cv.rectangle(image, pt1, pt2, color, thickness)
     if label is not None:
         text_size = cv.getTextSize(
@@ -105,19 +55,3 @@ def draw_rectangle(x, y, w, h, image, label=None, thickness=2, color=(0, 0, 255)
         cv.putText(image, label, center, cv.FONT_HERSHEY_PLAIN, 1, (255, 255, 255), thickness)
         # cv.imshow("frame", image)
 
-
-def draw_detections(detections, image):
-    thickness = 2
-    color = 0, 0, 255
-    for i, detection in enumerate(detections):
-        draw_rectangle(*detection.tlwh, image, thickness=thickness, color=color)
-
-
-def draw_trackers(tracks, image):
-    thickness = 2
-    for track in tracks:
-        if not track.is_confirmed() or track.time_since_update > 0:
-            continue
-        color = create_unique_color_uchar(track.track_id)
-        draw_rectangle(*track.to_tlwh(), image,
-                       label=str(track.track_id), thickness=thickness, color=color)

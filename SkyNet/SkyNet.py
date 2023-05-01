@@ -22,7 +22,8 @@ OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
 from SkyNet.PoseEstimation.PoseEstimation import PoseEstimation
-from SkyNet.Annotations.PoseKeypoints import draw_keypoints, draw_connections, KEYPOINT_EDGE_INDS_TO_COLOR
+from SkyNet.Annotations.PoseKeypoints import draw_keypoints, draw_connections
+from SkyNet.Annotations.BoundingBoxes import draw_rectangle
 from SkyNet.ObjectDetection.ObjectDetector import ObjectDetector
 from SkyNet.ObjectTracking.CentroidTracker import CentroidTracker
 from SkyNet.Utils import crop_bb
@@ -47,7 +48,7 @@ class SkyNet:
         self.__object_detector = ObjectDetector(detector_input_size,
                                                 detector_interpreter_file)
 
-        self.__tracker = CentroidTracker(10)
+        self.__tracker = CentroidTracker(120)
 
     def run(self):
 
@@ -66,13 +67,13 @@ class SkyNet:
                                                                                             width,
                                                                                             height)
 
-            image_crops = crop_bb(frame, bboxes)
+            tracks, bboxes = self.__tracker.update_tracks(bboxes)
 
-            tracks = self.__tracker.update_tracks(bboxes)
+            image_crops = crop_bb(frame, bboxes)
 
             # estimação de postura - por objeto
 
-            for i in range(0, len(image_crops)):
+            for i in image_crops.keys():
 
                 image = image_crops[i]
 
@@ -96,14 +97,8 @@ class SkyNet:
 
             for (objectID, centroid) in tracks.items():
                 text = "ID {}".format(objectID)
-
-                cv.putText(frame,
-                           text,
-                           (centroid[0] - 10, centroid[1] - 10),
-                           cv.FONT_HERSHEY_SIMPLEX, 0.5,
-                           (0, 255, 0), 2)
-
-                cv.circle(frame, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+                left, top, right, bottom = bboxes[objectID]
+                draw_rectangle(left, top, right, bottom, frame, label=text)
 
             # Convertendo o frame de volta para BGR
             frame = cv.cvtColor(frame, cv.COLOR_RGB2BGR)

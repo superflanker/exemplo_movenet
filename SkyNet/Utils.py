@@ -1,6 +1,7 @@
 import tensorflow as tf
 import cv2 as cv
 import numpy as np
+from collections import OrderedDict
 
 
 def preprocess(frame, img_size):
@@ -27,14 +28,15 @@ def preprocess(frame, img_size):
 
 
 def crop_bb(frame, raw_dets):
-    crops = []
+    crops = OrderedDict()
     im_height, im_width = frame.shape[:2]
-    for i, detection in enumerate(raw_dets):
+    for i in raw_dets.keys():
+        detection = raw_dets[i]
         l, t, r, b = [int(x) for x in detection]
         crop_l = max(0, l)
         crop_r = min(im_width, r)
         crop_t = max(0, t)
         crop_b = min(im_height, b)
-        crops.append(frame[crop_t:crop_b, crop_l:crop_r])
+        crops[i] = frame[crop_t:crop_b, crop_l:crop_r]
 
     return crops
