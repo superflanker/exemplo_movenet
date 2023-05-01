@@ -12,4 +12,3 @@ pip install -r requirements.txt
 
 python test_framework.py
 
-Os resultados devem estar na pasta saidas
