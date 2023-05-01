@@ -10,6 +10,6 @@ pip install -r requirements.txt
 
 # Rodando o exemplo
 
-python exemplo_movenet.py
+python test_framework.py
 
 Os resultados devem estar na pasta saidas
