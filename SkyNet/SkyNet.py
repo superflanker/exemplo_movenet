@@ -26,7 +26,8 @@ from SkyNet.Annotations.PoseKeypoints import draw_keypoints, draw_connections
 from SkyNet.Annotations.BoundingBoxes import draw_rectangle
 from SkyNet.ObjectDetection.ObjectDetector import ObjectDetector
 from SkyNet.ObjectTracking.CentroidTracker import CentroidTracker
-from SkyNet.Utils import crop_bb
+from SkyNet.Utils import crop_bb, non_max_suppression
+from collections import OrderedDict
 import cv2 as cv
 import numpy as np
 
@@ -55,9 +56,13 @@ class SkyNet:
 
         self.__tracker = CentroidTracker(30)
 
+    def __box_cleanup(self, boxes, nms):
+        new_boxes = list()
+        for i in nms:
+            new_boxes.append(boxes[i])
+        return new_boxes
 
     def run(self):
-
 
         while self.__capture_device.isOpened():
             # Lendo o frame atual
@@ -73,15 +78,26 @@ class SkyNet:
             classes, names, centroids, bboxes, scores = self.__object_detector.run_detector(frame.copy(),
                                                                                             width,
                                                                                             height)
+            # nom max suppression
+            maintainboxes = non_max_suppression(np.array(bboxes), 0.1, np.array(scores))
+
+            bboxes = self.__box_cleanup(bboxes, maintainboxes)
+
+            # rastreamento
 
             tracks, bboxes = self.__tracker.update_tracks(bboxes)
 
+            # separando as áreas de interesse
+
             image_crops = crop_bb(frame, bboxes)
+
+            poses = list()
+
+            pose_position = OrderedDict()
 
             # estimação de postura - por objeto
 
             for i in image_crops.keys():
-
                 image = image_crops[i]
 
                 bbox = bboxes[i]
@@ -98,14 +114,31 @@ class SkyNet:
                                                            im_width,
                                                            im_height)
 
-                draw_keypoints(frame, pose.get_points(), 0.1)
+                mpose = {"track_id": i,
+                         "bounding_box": bbox,
+                         "keypoints_with_scores": pose.get_points().flatten()}
 
-                draw_connections(frame, pose.get_points(), 0.1)
+                poses.append(mpose)
+
+                pose_position[i] = pose.get_points()
+
+            # imprimindo os rastreios e detecçoes - seriam as entradas do classificador de postura
+
+            print(poses)
+
+            # ainda falta: classificação de postura, classificação de movimentos e lógica de alarmes -
+            # isto deixo pra vocês!!!!
+
+            # O importante term,inou - agora vem as frescurinhas de desenhar a tela
 
             for (objectID, centroid) in tracks.items():
                 text = "ID {}".format(objectID)
                 left, top, right, bottom = bboxes[objectID]
                 draw_rectangle(left, top, right, bottom, frame, label=text)
+
+                draw_keypoints(frame, pose_position[i], 0.1)
+
+                draw_connections(frame, pose_position[i], 0.1)
 
             # Convertendo o frame de volta para BGR
             frame = cv.cvtColor(frame, cv.COLOR_RGB2BGR)
