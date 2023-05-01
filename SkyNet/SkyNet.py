@@ -38,19 +38,26 @@ class SkyNet:
                  pose_input_size=256,
                  detector_input_size=300,
                  pose_interpreter_file='models/singlepose_movenet.tflite',
-                 detector_interpreter_file='models/ssd_mobilenet_v2.tflite',
-                 use_deep_sort=True):
+                 detector_interpreter_file='models/ssd_mobilenet_v2.tflite'):
 
         self.__capture_device = cv.VideoCapture(capture_device)
+
+        self.__capture_device.set(cv.CAP_PROP_FRAME_WIDTH, 1280)
+
+        self.__capture_device.set(cv.CAP_PROP_FRAME_HEIGHT, 720)
+
+        r, frame = self.__capture_device.read()
 
         self.__pose_estimator = PoseEstimation(pose_input_size, pose_interpreter_file)
 
         self.__object_detector = ObjectDetector(detector_input_size,
                                                 detector_interpreter_file)
 
-        self.__tracker = CentroidTracker(120)
+        self.__tracker = CentroidTracker(30)
+
 
     def run(self):
+
 
         while self.__capture_device.isOpened():
             # Lendo o frame atual
