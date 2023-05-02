@@ -36,15 +36,26 @@ class PoseEstimates:
                  image_height):
         scores = []
         points = []
+        raw_points = []
         points_with_scores = np.reshape(keypoints_with_scores, (17, 3))
         for i in range(0, len(points_with_scores)):
-            y_p = offset_height + int(image_height * points_with_scores[i][0])
-            x_p = offset_width + int(image_width * points_with_scores[i][1])
+            ry_p = int(image_height * points_with_scores[i][0])
+            rx_p = int(image_width * points_with_scores[i][1])
+            y_p = offset_height + ry_p
+            x_p = offset_width + rx_p
             score = points_with_scores[i][2]
             points.append([y_p, x_p, score])
+            raw_points.append([ry_p, rx_p, score])
             scores.append(score)
         self.__scores = np.array(scores)
         self.__points = np.array(points)
+        self.__raw_points = np.array(raw_points)
 
     def get_points(self):
         return self.__points
+
+    def get_raw_points(self):
+        return self.__raw_points
+
+    def get_scores(self):
+        return self.__scores

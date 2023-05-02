@@ -54,7 +54,7 @@ class SkyNet:
         self.__object_detector = ObjectDetector(detector_input_size,
                                                 detector_interpreter_file)
 
-        self.__tracker = CentroidTracker(30)
+        self.__tracker = CentroidTracker(10)
 
     def __box_cleanup(self, boxes, nms):
         new_boxes = list()
@@ -115,8 +115,7 @@ class SkyNet:
                                                            im_height)
 
                 mpose = {"track_id": i,
-                         "bounding_box": bbox,
-                         "keypoints_with_scores": pose.get_points().flatten()}
+                         "keypoints_with_scores": pose.get_raw_points().flatten()}
 
                 poses.append(mpose)
 
@@ -136,9 +135,9 @@ class SkyNet:
                 left, top, right, bottom = bboxes[objectID]
                 draw_rectangle(left, top, right, bottom, frame, label=text)
 
-                draw_keypoints(frame, pose_position[i], 0.1)
+                draw_keypoints(frame, pose_position[objectID], 0.1)
 
-                draw_connections(frame, pose_position[i], 0.1)
+                draw_connections(frame, pose_position[objectID], 0.1)
 
             # Convertendo o frame de volta para BGR
             frame = cv.cvtColor(frame, cv.COLOR_RGB2BGR)
